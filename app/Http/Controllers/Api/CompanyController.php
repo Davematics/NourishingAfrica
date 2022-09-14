@@ -15,7 +15,7 @@ class CompanyController extends Controller
 
     public function index(Request $request)
     {
-        $companies =Company::where('owner_id',1)
+        $companies =Company::where('owner_id',auth()->user()->id)
         ->where('name', 'LIKE', '%' . $request->name . '%')
         ->get();
 
