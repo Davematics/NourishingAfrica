@@ -11,21 +11,25 @@ use Illuminate\Validation\Rule;
 use Illuminate\Http\Response;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegistrationRequest;
-
+use Illuminate\Http\JsonResponse;
+use App\Interfaces\AuthRepositoryInterface;
 class AuthController extends Controller
 {
     
-    public function UserRegistration(RegistrationRequest $request)
-    {
-        $user = new User();
-        $user->name = $request->name;
-        $user->phone_number = $request->phone_number;
-        $user->country = $request->country;
-        $user->email = $request->email;
-        $user->password = Hash::make($request->password);
-        $user->save();
+    private AuthRepositoryInterface $authRepository;
 
-        return $this->success('User Created Successfully', $user, Response::HTTP_CREATED);
+    public function __construct(AuthRepositoryInterface $authRepository) 
+    {
+        $this->authRepository = $authRepository;
+    }
+
+
+    public function UserRegistration(RegistrationRequest $request)  
+    {
+
+       $user = $this->authRepository->userRegistration($request);
+
+        return $this->success('User created successfully', $user, Response::HTTP_CREATED);
     }
 
 
@@ -33,36 +37,18 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         
-        if (filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
-          
-            if (!Auth::attempt($request->only('email', 'password'))) {
-                return $this->failure('Invalid login details', Response::HTTP_UNPROCESSABLE_ENTITY);
-            }
-        } else {
-           
-            if (!Auth::attempt(['username' => $request->email, 'password' => $request->password])) {
-                return $this->failure('Invalid username and password details', Response::HTTP_UNPROCESSABLE_ENTITY);
-            };
-        }
+        $login = $this->authRepository->login($request);
        
-        $user =  auth()->user();
-        
-        
-        $token = $user->createToken('auth_token')->plainTextToken;
-        $user->access_token = $token;
-       
-        return $this->success('User login successfully', $user);
+        return $this->success('User login successfully', $login, Response::HTTP_OK);
     }
 
 
     public function logout(Request $request)
     {
-        $request->validate([
-            'email' => 'required',
-        ]);
-       auth()->user()->tokens()->delete();
-
-        return $this->success('logout was successful', Response::HTTP_OK);
+      
+        $logout = $this->authRepository->logout();
+       
+        return $this->success('User logout successfully', $logout, Response::HTTP_OK);
     
     }
 }

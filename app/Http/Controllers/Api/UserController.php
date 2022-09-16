@@ -8,19 +8,21 @@ use Illuminate\Validation\Rule;
 use Illuminate\Http\Response;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use App\Interfaces\UserRepositoryInterface;
 
 class UserController extends Controller
 {
     
+    private UserRepositoryInterface $userRepository;
+
+    public function __construct(UserRepositoryInterface $userRepository) 
+    {
+        $this->userRepository = $userRepository;
+    }
     public function UpdateUser(UpdateUserRequest $request)
     {
+        $update = $this->userRepository->update($request);
 
-        $user = User::where('id',auth()->user()->id)->first();
-        $user->name = $request->name;
-        $user->phone_number = $request->phone_number;
-        $user->country = $request->country;
-        $user->save();
-
-        return $this->success('User Updated Successfully', $user, Response::HTTP_CREATED);
+        return $this->success('User Updated Successfully', $update, Response::HTTP_CREATED);
     }
 }
